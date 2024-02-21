@@ -1,0 +1,19 @@
+syntax = "proto3";
+package cliapi;
+
+import "google/protobuf/empty.proto";
+
+message ConnectRequest {
+  string address = 1;
+}
+
+message GetStatusResponse {
+  string status = 1;
+  string retry_count = 2;
+  string uptime = 3;
+}
+service Control {
+  rpc Connect(ConnectRequest) returns (google.protobuf.Empty) {}
+  rpc Disconnect(google.protobuf.Empty) returns (google.protobuf.Empty) {}
+  rpc GetStatus(google.protobuf.Empty) returns (GetStatusResponse) {}
+}
