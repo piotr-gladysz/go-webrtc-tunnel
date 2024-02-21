@@ -2,7 +2,7 @@ package server
 
 import (
 	"errors"
-	"go-webrtc-tunnel/pkg/signaling/message"
+	"github.com/piotr-gladysz/go-webrtc-tunnel/pkg/signaling/message"
 )
 
 var ReceiverNotFoundError = errors.New("Receiver not found")

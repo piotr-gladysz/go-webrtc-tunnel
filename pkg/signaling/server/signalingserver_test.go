@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"github.com/gorilla/websocket"
-	"go-webrtc-tunnel/pkg/signaling/message"
+	"github.com/piotr-gladysz/go-webrtc-tunnel/pkg/signaling/message"
 	"net/http"
 	"testing"
 	"time"

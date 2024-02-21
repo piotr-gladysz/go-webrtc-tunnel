@@ -3,7 +3,7 @@ package server
 import (
 	"fmt"
 	"github.com/gin-gonic/gin"
-	"go-webrtc-tunnel/pkg/signaling/message"
+	"github.com/piotr-gladysz/go-webrtc-tunnel/pkg/signaling/message"
 	"log/slog"
 	"time"
 )
@@ -17,7 +17,6 @@ type MessageDecoder interface {
 }
 
 func (s *SignalingServer) handleWS(c *gin.Context) {
-
 	session, err := s.authenticate(c)
 	if err != nil {
 		slog.Error("Failed to authenticate WS", "err", err)
@@ -27,20 +26,21 @@ func (s *SignalingServer) handleWS(c *gin.Context) {
 
 	conn, err := s.upgrader.Upgrade(c.Writer, c.Request, nil)
 
-	session.conn = conn
-
 	if err != nil {
 		slog.Error("Failed to upgrade WS", "err", err)
 		c.AbortWithStatus(500)
 		return
 	}
 
-	go s.handleWsConn(session)
+	session.conn = conn
 
+	go s.handleWsConn(session)
 }
 
 func (s *SignalingServer) authenticate(c *gin.Context) (*WSSession, error) {
 	// TODO: implement authentication
+	// TODO: public id, private token, maybe asymmetric encryption
+	// TODO: sticky tokens
 
 	// !!! Temporary implementation
 	sess := &WSSession{
@@ -52,10 +52,7 @@ func (s *SignalingServer) authenticate(c *gin.Context) (*WSSession, error) {
 }
 
 func (s *SignalingServer) handleWsConn(session *WSSession) {
-
 	slog.Debug("New WS connection", "session", session.id, "remote", session.conn.RemoteAddr())
-
-	session.conn.SetReadDeadline(time.Time{})
 
 	s.sessions.Add(session)
 

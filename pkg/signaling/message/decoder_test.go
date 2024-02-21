@@ -35,8 +35,6 @@ func TestSimpleJsonDecoder_Decode(t *testing.T) {
 	if env.decodedData.(*ErrorMessage).Message != "test" {
 		t.Errorf("expected test, got %s", env.decodedData.(*ErrorMessage).Message)
 	}
-
-	t.Run()
 }
 
 func BenchmarkSimpleJsonDecoder_Decode(b *testing.B) {
