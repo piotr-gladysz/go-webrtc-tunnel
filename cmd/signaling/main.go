@@ -1,14 +1,15 @@
 package main
 
 import (
-	"go-webrtc-tunnel/pkg/signaling/server"
+	"github.com/piotr-gladysz/go-webrtc-tunnel/pkg/signaling/server"
 )
 
 func main() {
 
+	//TODO: config
 	signaling := server.NewSignalingServer()
 
-	err := signaling.Start(":8080")
+	err := signaling.Start(":38080")
 	if err != nil {
 		panic(err)
 	}
