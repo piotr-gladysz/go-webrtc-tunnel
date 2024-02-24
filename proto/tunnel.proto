@@ -6,7 +6,8 @@ import "google/protobuf/empty.proto";
 message CreateTunnelRequest {
   string peer_id = 1;
   uint32 local_port = 2;
-  uint32 remote_port = 3;
+  string remote_host = 3;
+  uint32 remote_port = 4;
 }
 
 
