@@ -2,11 +2,16 @@ package p2p
 
 import (
 	"context"
+	"errors"
 	"github.com/gorilla/websocket"
+	"github.com/piotr-gladysz/go-webrtc-tunnel/pkg/signaling/message"
 	"github.com/piotr-gladysz/go-webrtc-tunnel/pkg/signaling/server"
+	"log/slog"
 	"sync"
 	"time"
 )
+
+var ClientStoppedError = errors.New("client stopped")
 
 type SignalingClient struct {
 	ctx    context.Context
@@ -16,6 +21,7 @@ type SignalingClient struct {
 	mux         sync.RWMutex
 	isConnected bool
 	conn        *websocket.Conn
+	connCh      chan struct{}
 
 	decoder server.MessageDecoder
 	encoder server.MessageEncoder
@@ -24,6 +30,8 @@ type SignalingClient struct {
 	lastConnectionAttempt time.Time
 
 	reconnectTime time.Duration
+
+	authInfo *message.AuthInfo
 }
 
 func NewSignalingClient(parentCtx context.Context, host string) *SignalingClient {
@@ -37,8 +45,10 @@ func NewSignalingClient(parentCtx context.Context, host string) *SignalingClient
 	}
 }
 
-func (s *SignalingClient) Start(ctx context.Context) error {
+func (s *SignalingClient) Start(ctx context.Context) {
 	s.ctx = ctx
+
+	s.connCh = make(chan struct{})
 
 	go func() {
 		select {
@@ -48,29 +58,31 @@ func (s *SignalingClient) Start(ctx context.Context) error {
 		}
 	}()
 
-	ch := make(chan struct{})
 	go func() {
-		s.lastConnectionAttempt = time.Now()
-		conn, err := s.connect()
+		defer func() {
+			if s.connCh != nil {
+				s.mux.Lock()
+				s.lastError = ClientStoppedError
+				close(s.connCh)
+				s.mux.Unlock()
 
-		// if first connection failed, don't try to reconnect
-
-		s.mux.Lock()
-		if err != nil {
-			s.lastError = err
-			ch <- struct{}{}
-			s.mux.Unlock()
-			return
-		} else {
-			s.lastError = nil
-			ch <- struct{}{}
-		}
-
-		s.isConnected = true
-		s.conn = conn
-		s.mux.Unlock()
+			} else {
+				slog.Warn("connCh is nil")
+			}
+		}()
 
 		for {
+
+			sleepTime := 1*time.Second - time.Since(s.lastConnectionAttempt)
+			if sleepTime > 0 {
+				ticker := time.NewTicker(sleepTime)
+				select {
+				case <-s.ctx.Done():
+					ticker.Stop()
+					return
+				case <-ticker.C:
+				}
+			}
 
 			select {
 			case <-s.ctx.Done():
@@ -78,63 +90,51 @@ func (s *SignalingClient) Start(ctx context.Context) error {
 			default:
 			}
 
-			s.processWs(conn)
+			s.lastConnectionAttempt = time.Now()
 
+			conn, err := s.connect()
+
+			select {
+			case <-s.ctx.Done():
+				return
+			default:
+			}
+
+			s.mux.Lock()
+			if err != nil {
+				s.lastError = err
+				s.mux.Unlock()
+				continue
+			} else {
+				s.lastError = nil
+				s.isConnected = true
+				s.conn = conn
+			}
+			s.mux.Unlock()
+
+			tokenMsg, err := s.recvToken(conn)
+			if err != nil {
+				slog.Error("failed to receive token", "error", err.Error())
+				continue
+			} else {
+				s.mux.Lock()
+				s.authInfo, _ = tokenMsg.GetAuthToken()
+				close(s.connCh)
+				s.mux.Unlock()
+			}
+
+			s.processWs()
+
+			s.connCh = make(chan struct{})
 			s.mux.Lock()
 			s.isConnected = false
 			s.conn = nil
 			s.mux.Unlock()
 
-			for {
-
-				sleepTime := 1*time.Second - time.Since(s.lastConnectionAttempt)
-				if sleepTime > 0 {
-					ticker := time.NewTicker(sleepTime)
-					select {
-					case <-s.ctx.Done():
-						ticker.Stop()
-						return
-					case <-ticker.C:
-					}
-				}
-
-				select {
-				case <-s.ctx.Done():
-					return
-				default:
-				}
-
-				s.lastConnectionAttempt = time.Now()
-
-				conn, err := s.connect()
-
-				select {
-				case <-s.ctx.Done():
-					return
-				default:
-				}
-
-				s.mux.Lock()
-				if err != nil {
-					s.lastError = err
-				} else {
-					s.lastError = nil
-					s.isConnected = true
-					s.conn = conn
-					s.mux.Unlock()
-					break
-				}
-				s.mux.Unlock()
-
-			}
-
 		}
 
 	}()
 
-	<-ch
-
-	return s.lastError
 }
 
 func (s *SignalingClient) Stop() {
@@ -157,4 +157,8 @@ func (s *SignalingClient) IsConnected() bool {
 	s.mux.RLock()
 	defer s.mux.RUnlock()
 	return s.isConnected
+}
+
+func (s *SignalingClient) WaitForConnectChannel() chan struct{} {
+	return s.connCh
 }

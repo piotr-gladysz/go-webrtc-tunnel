@@ -5,6 +5,7 @@ import (
 	"errors"
 	"github.com/gorilla/websocket"
 	"github.com/piotr-gladysz/go-webrtc-tunnel/pkg/signaling/message"
+	"log/slog"
 )
 
 func (s *SignalingClient) connect() (*websocket.Conn, error) {
@@ -58,6 +59,59 @@ func (s *SignalingClient) waitForToken(ctx context.Context, conn *websocket.Conn
 	}
 }
 
-func (s *SignalingClient) processWs(conn *websocket.Conn) {
+func (s *SignalingClient) processWs() {
+	for {
 
+		read, rawMsg, err := s.conn.ReadMessage()
+		if err != nil {
+			slog.Error("Failed to read message", "err", err, "raw", string(rawMsg), "read", read)
+			return
+		}
+		slog.Debug("received message", "message", string(rawMsg))
+
+		err = s.handleMessage(rawMsg)
+		if err != nil {
+			slog.Error("Failed to handle message", "err", err)
+		}
+
+	}
+}
+
+func (s *SignalingClient) handleMessage(rawMsg []byte) error {
+	var env message.Envelope
+
+	err := s.decoder.Decode(rawMsg, &env)
+	if err != nil {
+		slog.Error("Failed to decode message", "err", err)
+
+		if err := s.sendError("Invalid message", 1, -1); err != nil {
+			slog.Error("Failed to send error", "err", err)
+			return err
+		}
+	}
+
+	switch env.Type {
+	case message.MessageTypeSDPOffer, message.MessageTypeSDPAnswer:
+
+	}
+	return nil
+}
+
+func (s *SignalingClient) sendMsg(msg *message.Envelope) error {
+	encoded, err := s.encoder.Encode(msg)
+	if err != nil {
+		return err
+	}
+
+	err = s.conn.WriteMessage(websocket.TextMessage, encoded)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *SignalingClient) sendError(errMsg string, code, relatedId int32) error {
+	msg := message.NewErrorMessage(errMsg, code, relatedId)
+	return s.sendMsg(msg)
 }

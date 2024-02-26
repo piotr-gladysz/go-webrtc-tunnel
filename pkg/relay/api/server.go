@@ -3,6 +3,7 @@ package api
 import (
 	"fmt"
 	"github.com/piotr-gladysz/go-webrtc-tunnel/pkg/cliapi"
+	"github.com/piotr-gladysz/go-webrtc-tunnel/pkg/relay/daemon"
 	"google.golang.org/grpc"
 	"net"
 )
@@ -11,12 +12,14 @@ type Server struct {
 	port int
 	ip   string
 
+	relay *daemon.Relay
+
 	server   *grpc.Server
 	listener net.Listener
 }
 
-func NewServer(port int, ip string) *Server {
-	return &Server{port: port, ip: ip}
+func NewServer(port int, ip string, relay *daemon.Relay) *Server {
+	return &Server{port: port, ip: ip, relay: relay}
 }
 
 func (s *Server) Run() error {

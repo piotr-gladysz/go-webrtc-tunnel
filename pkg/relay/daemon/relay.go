@@ -8,7 +8,7 @@ import (
 type Relay struct {
 	ctx context.Context
 
-	sigClient *p2p.SignalingClient
+	signaling *p2p.SignalingClient
 }
 
 func NewRelay(ctx context.Context) *Relay {
