@@ -35,12 +35,12 @@ func (e *Envelope) GetError() (*ErrorMessage, error) {
 	return ret, nil
 }
 
-func (e *Envelope) GetAuthToken() (*AuthToken, error) {
+func (e *Envelope) GetAuthToken() (*AuthInfo, error) {
 	if e.Type != MessageTypeAuthToken {
 		return nil, InvalidTypeError
 	}
 
-	ret, ok := e.decodedData.(*AuthToken)
+	ret, ok := e.decodedData.(*AuthInfo)
 	if !ok {
 		return nil, InvalidTypeError
 	}

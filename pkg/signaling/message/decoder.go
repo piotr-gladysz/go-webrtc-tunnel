@@ -29,7 +29,7 @@ func (s *SimpleJsonDecoder) Decode(data []byte, msg *Envelope) error {
 
 		msg.decodedData = body
 	case MessageTypeAuthToken:
-		body := new(AuthToken)
+		body := new(AuthInfo)
 
 		err := mapstructure.Decode(msg.Data, body)
 		if err != nil {

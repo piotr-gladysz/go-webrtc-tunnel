@@ -5,11 +5,11 @@ var messageId int32 = 0
 
 type ErrorMessage struct {
 	Message   string `json:"message"`
-	Code      int    `json:"code"`
+	Code      int32  `json:"code"`
 	RelatedId int32  `json:"related_id"`
 }
 
-type AuthToken struct {
+type AuthInfo struct {
 	Token string `json:"token"`
 }
 
@@ -19,7 +19,7 @@ type SDP struct {
 	Sender   string `json:"sender"`
 }
 
-func NewErrorMessage(message string, code int, relatedId int32) *Envelope {
+func NewErrorMessage(message string, code int32, relatedId int32) *Envelope {
 	messageId++
 	return &Envelope{
 		Id:   messageId,
@@ -37,7 +37,7 @@ func NewAuthToken(token string) *Envelope {
 	return &Envelope{
 		Id:   messageId,
 		Type: MessageTypeAuthToken,
-		decodedData: &AuthToken{
+		decodedData: &AuthInfo{
 			Token: token,
 		},
 	}
