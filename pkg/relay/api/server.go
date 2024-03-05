@@ -18,7 +18,7 @@ type Server struct {
 	listener net.Listener
 }
 
-func NewServer(port int, ip string, relay *daemon.Relay) *Server {
+func NewServer(ip string, port int, relay *daemon.Relay) *Server {
 	return &Server{port: port, ip: ip, relay: relay}
 }
 
@@ -30,7 +30,7 @@ func (s *Server) Run() error {
 
 	grpcServer := grpc.NewServer()
 
-	cliapi.RegisterControlServer(grpcServer, newControlServer())
+	cliapi.RegisterControlServer(grpcServer, newControlServer(s.relay))
 	cliapi.RegisterPeerServer(grpcServer, newPeerServer())
 	cliapi.RegisterTunnelServer(grpcServer, newTunnelServer())
 

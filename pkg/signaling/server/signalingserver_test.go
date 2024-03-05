@@ -44,9 +44,11 @@ func receiveToken(conn *websocket.Conn, t *testing.T) string {
 
 func TestSignalingServer(t *testing.T) {
 
+	signalingCh := make(chan struct{})
 	signaling := NewSignalingServer()
 
 	go func() {
+		defer close(signalingCh)
 		err := signaling.Start(":18080")
 		if err != nil && !errors.Is(err, http.ErrServerClosed) {
 			t.Fatalf("expected nil, got %s", err)
@@ -60,6 +62,7 @@ func TestSignalingServer(t *testing.T) {
 			t.Fatalf("expected nil, got %s", err)
 		}
 		cancel()
+		<-signalingCh
 
 	}()
 
@@ -78,7 +81,7 @@ func TestSignalingServer(t *testing.T) {
 	decoder := &message.SimpleJsonDecoder{}
 	encoder := &message.SimpleJsonEncoder{}
 
-	offer := message.NewSDP("offer_string", receiverToken, "", message.MessageTypeSDPOffer)
+	offer := message.NewSignaling("offer_string", receiverToken, "", message.MessageTypeSDPOffer)
 	data, _ := encoder.Encode(offer)
 	err := sender.WriteMessage(websocket.TextMessage, data)
 
@@ -98,14 +101,14 @@ func TestSignalingServer(t *testing.T) {
 		t.Fatalf("expected %d, got %d", message.MessageTypeSDPOffer, env.Type)
 	}
 
-	sdp, err := env.GetSDP()
+	sdp, err := env.GetSignaling()
 
 	if err != nil {
 		t.Fatalf("expected nil, got %s", err)
 	}
 
-	if sdp.SDP != "offer_string" {
-		t.Fatalf("expected offer_string, got %s", sdp.SDP)
+	if sdp.Data != "offer_string" {
+		t.Fatalf("expected offer_string, got %s", sdp.Data)
 	}
 
 	if sdp.Sender != senderToken {

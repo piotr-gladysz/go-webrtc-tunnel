@@ -14,20 +14,22 @@ import (
 var ClientStoppedError = errors.New("client stopped")
 
 type SignalingClient struct {
+	parentCtx context.Context
+
 	ctx    context.Context
 	cancel context.CancelFunc
 	host   string
 
-	mux         sync.RWMutex
-	isConnected bool
-	conn        *websocket.Conn
-	connCh      chan struct{}
+	mux sync.RWMutex
+
+	connMux sync.Mutex
+	conn    *websocket.Conn
+	connCh  chan struct{}
 
 	decoder server.MessageDecoder
 	encoder server.MessageEncoder
 
-	lastError             error
-	lastConnectionAttempt time.Time
+	status *SignalingStatus
 
 	reconnectTime time.Duration
 
@@ -38,102 +40,20 @@ func NewSignalingClient(parentCtx context.Context, host string) *SignalingClient
 	ctx, cancel := context.WithCancel(parentCtx)
 
 	return &SignalingClient{
-		ctx:           ctx,
+		parentCtx:     ctx,
 		cancel:        cancel,
 		host:          host,
 		reconnectTime: 2 * time.Second, // TODO: config
+		status:        NewSignalingStatus(),
 	}
 }
 
-func (s *SignalingClient) Start(ctx context.Context) {
-	s.ctx = ctx
-
+func (s *SignalingClient) Start() {
+	s.ctx, s.cancel = context.WithCancel(s.parentCtx)
 	s.connCh = make(chan struct{})
 
-	go func() {
-		select {
-		case <-s.ctx.Done():
-			s.clean()
-			return
-		}
-	}()
-
-	go func() {
-		defer func() {
-			if s.connCh != nil {
-				s.mux.Lock()
-				s.lastError = ClientStoppedError
-				close(s.connCh)
-				s.mux.Unlock()
-
-			} else {
-				slog.Warn("connCh is nil")
-			}
-		}()
-
-		for {
-
-			sleepTime := 1*time.Second - time.Since(s.lastConnectionAttempt)
-			if sleepTime > 0 {
-				ticker := time.NewTicker(sleepTime)
-				select {
-				case <-s.ctx.Done():
-					ticker.Stop()
-					return
-				case <-ticker.C:
-				}
-			}
-
-			select {
-			case <-s.ctx.Done():
-				return
-			default:
-			}
-
-			s.lastConnectionAttempt = time.Now()
-
-			conn, err := s.connect()
-
-			select {
-			case <-s.ctx.Done():
-				return
-			default:
-			}
-
-			s.mux.Lock()
-			if err != nil {
-				s.lastError = err
-				s.mux.Unlock()
-				continue
-			} else {
-				s.lastError = nil
-				s.isConnected = true
-				s.conn = conn
-			}
-			s.mux.Unlock()
-
-			tokenMsg, err := s.recvToken(conn)
-			if err != nil {
-				slog.Error("failed to receive token", "error", err.Error())
-				continue
-			} else {
-				s.mux.Lock()
-				s.authInfo, _ = tokenMsg.GetAuthToken()
-				close(s.connCh)
-				s.mux.Unlock()
-			}
-
-			s.processWs()
-
-			s.connCh = make(chan struct{})
-			s.mux.Lock()
-			s.isConnected = false
-			s.conn = nil
-			s.mux.Unlock()
-
-		}
-
-	}()
+	go s.watchClose()
+	go s.runConnection()
 
 }
 
@@ -142,6 +62,7 @@ func (s *SignalingClient) Stop() {
 }
 
 func (s *SignalingClient) clean() {
+	s.status.SetIsConnected(false)
 	s.mux.Lock()
 	defer s.mux.Unlock()
 
@@ -150,15 +71,112 @@ func (s *SignalingClient) clean() {
 	}
 	s.conn = nil
 
-	s.isConnected = false
 }
 
 func (s *SignalingClient) IsConnected() bool {
-	s.mux.RLock()
-	defer s.mux.RUnlock()
-	return s.isConnected
+	return s.status.GetIsConnected()
 }
 
 func (s *SignalingClient) WaitForConnectChannel() chan struct{} {
 	return s.connCh
+}
+
+func (s *SignalingClient) watchClose() {
+	<-s.ctx.Done()
+	s.clean()
+}
+
+func (s *SignalingClient) runConnection() {
+	defer func() {
+		if s.connCh != nil {
+			s.status.SetLastError(ClientStoppedError)
+			s.mux.Lock()
+			close(s.connCh)
+			s.mux.Unlock()
+
+		} else {
+			slog.Warn("connCh is nil")
+		}
+	}()
+
+	for {
+		s.status.IncRetryCount()
+		// prevent reconnecting too fast
+		sleepTime := 1*time.Second - time.Since(s.status.GetLastConnectionAttempt())
+		if sleepTime > 0 {
+			ticker := time.NewTicker(sleepTime)
+			select {
+			case <-s.ctx.Done():
+				ticker.Stop()
+				return
+			case <-ticker.C:
+			}
+		}
+
+		// check if we should stop
+		select {
+		case <-s.ctx.Done():
+			return
+		default:
+		}
+
+		s.status.SetLastConnectionAttempt(time.Now())
+
+		conn, err := s.connect()
+
+		// check if we should stop
+		select {
+		case <-s.ctx.Done():
+			return
+		default:
+		}
+
+		// if we have an error, we should try to reconnect
+		if err != nil {
+			s.status.SetLastError(err)
+			continue
+		} else {
+			s.status.SetLastError(nil)
+			s.status.SetIsConnected(true)
+			s.status.SetConnectTime(time.Now())
+
+			s.mux.Lock()
+			s.conn = conn
+			s.mux.Unlock()
+		}
+
+		// if we have a connection, we should process it
+		tokenMsg, err := s.recvToken(conn)
+
+		// if we received an error, we should try to reconnect
+		if err != nil {
+			slog.Error("failed to receive token", "error", err.Error())
+			continue
+		} else {
+			s.mux.Lock()
+			s.authInfo, _ = tokenMsg.GetAuthToken()
+			s.mux.Unlock()
+			close(s.connCh)
+		}
+
+		// if we received a token, we are connected
+
+		s.processWs()
+
+		// if we are not connected, we should try to reconnect
+		s.status.SetIsConnected(false)
+		s.connCh = make(chan struct{})
+
+		s.mux.Lock()
+		s.conn = nil
+		s.mux.Unlock()
+
+		// check if we should stop
+		select {
+		case <-s.ctx.Done():
+			return
+		default:
+		}
+
+	}
 }

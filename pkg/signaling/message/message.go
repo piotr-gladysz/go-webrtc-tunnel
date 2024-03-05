@@ -13,8 +13,8 @@ type AuthInfo struct {
 	Token string `json:"token"`
 }
 
-type SDP struct {
-	SDP      string `json:"sdp"`
+type Signaling struct {
+	Data     string `json:"data"`
 	Receiver string `json:"receiver"`
 	Sender   string `json:"sender"`
 }
@@ -43,13 +43,13 @@ func NewAuthToken(token string) *Envelope {
 	}
 }
 
-func NewSDP(sdp, receiver, sender string, msgType MessageType) *Envelope {
+func NewSignaling(sdp, receiver, sender string, msgType MessageType) *Envelope {
 	messageId++
 	return &Envelope{
 		Id:   messageId,
 		Type: msgType,
-		decodedData: &SDP{
-			SDP:      sdp,
+		decodedData: &Signaling{
+			Data:     sdp,
 			Receiver: receiver,
 			Sender:   sender,
 		},

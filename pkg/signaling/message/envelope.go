@@ -10,8 +10,10 @@ const (
 	MessageTypeError MessageType = 0
 
 	MessageTypeAuthToken MessageType = 100
-	MessageTypeSDPOffer  MessageType = 101
-	MessageTypeSDPAnswer MessageType = 102
+
+	MessageTypeSDPOffer     MessageType = 101
+	MessageTypeSDPAnswer    MessageType = 102
+	MessageTypeICECandidate MessageType = 103
 )
 
 type Envelope struct {
@@ -48,12 +50,12 @@ func (e *Envelope) GetAuthToken() (*AuthInfo, error) {
 	return ret, nil
 }
 
-func (e *Envelope) GetSDP() (*SDP, error) {
-	if e.Type != MessageTypeSDPOffer && e.Type != MessageTypeSDPAnswer {
+func (e *Envelope) GetSignaling() (*Signaling, error) {
+	if e.Type != MessageTypeSDPOffer && e.Type != MessageTypeSDPAnswer && e.Type != MessageTypeICECandidate {
 		return nil, InvalidTypeError
 	}
 
-	ret, ok := e.decodedData.(*SDP)
+	ret, ok := e.decodedData.(*Signaling)
 	if !ok {
 		return nil, InvalidTypeError
 	}

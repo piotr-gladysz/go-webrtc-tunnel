@@ -38,7 +38,7 @@ func (s *SimpleJsonDecoder) Decode(data []byte, msg *Envelope) error {
 
 		msg.decodedData = body
 	case MessageTypeSDPOffer, MessageTypeSDPAnswer:
-		body := new(SDP)
+		body := new(Signaling)
 
 		err := mapstructure.Decode(msg.Data, body)
 		if err != nil {

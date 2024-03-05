@@ -61,6 +61,8 @@ func (m *CreateTunnelRequest) validate(all bool) error {
 
 	// no validation rules for LocalPort
 
+	// no validation rules for RemoteHost
+
 	// no validation rules for RemotePort
 
 	if len(errors) > 0 {

@@ -7,8 +7,8 @@ import (
 
 var ReceiverNotFoundError = errors.New("Receiver not found")
 
-func (s *SignalingServer) handleSDP(sess *WSSession, env *message.Envelope) error {
-	recvMsg, _ := env.GetSDP()
+func (s *SignalingServer) handleSignaling(sess *WSSession, env *message.Envelope) error {
+	recvMsg, _ := env.GetSignaling()
 
 	receiver := s.sessions.GetById(recvMsg.Receiver)
 	if receiver == nil {
@@ -26,7 +26,7 @@ func (s *SignalingServer) handleSDP(sess *WSSession, env *message.Envelope) erro
 		return ReceiverNotFoundError
 	}
 
-	msg := message.NewSDP(recvMsg.SDP, recvMsg.Receiver, sess.id, env.Type)
+	msg := message.NewSignaling(recvMsg.Data, recvMsg.Receiver, sess.id, env.Type)
 
 	data, err := s.encoder.Encode(msg)
 	if err != nil {

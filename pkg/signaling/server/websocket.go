@@ -104,9 +104,9 @@ func (s *SignalingServer) handleMessage(session *WSSession, rawMsg []byte) error
 
 	switch env.Type {
 	case message.MessageTypeSDPOffer, message.MessageTypeSDPAnswer:
-		err = s.handleSDP(session, &env)
+		err = s.handleSignaling(session, &env)
 		if err != nil {
-			slog.Error("Failed to handle SDP", "err", err)
+			slog.Error("Failed to handle Signaling", "err", err)
 		}
 
 	}

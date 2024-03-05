@@ -12,6 +12,7 @@ import (
 func setPeerCmd() *cobra.Command {
 
 	var id, portsStr string
+	var connect bool
 
 	cmd := &cobra.Command{
 		Use:   "set",
@@ -32,8 +33,9 @@ func setPeerCmd() *cobra.Command {
 			client := cliapi.NewPeerClient(conn)
 
 			req := cliapi.SetPeerRequest{
-				Id:    id,
-				Ports: ports,
+				Id:      id,
+				Ports:   ports,
+				Connect: connect,
 			}
 
 			_, err = client.SetPeer(cmd.Context(), &req)
@@ -48,6 +50,7 @@ func setPeerCmd() *cobra.Command {
 
 	cmd.Flags().StringVarP(&id, "id", "i", "", "peer id")
 	cmd.Flags().StringVarP(&portsStr, "ports", "p", "", "ports")
+	cmd.Flags().BoolVarP(&connect, "connect", "c", false, "connect")
 
 	cmd.MarkFlagRequired("id")
 

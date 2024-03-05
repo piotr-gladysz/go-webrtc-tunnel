@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"github.com/piotr-gladysz/go-webrtc-tunnel/pkg/relay/api"
+	"github.com/piotr-gladysz/go-webrtc-tunnel/pkg/relay/config"
 	"github.com/piotr-gladysz/go-webrtc-tunnel/pkg/relay/daemon"
 	"log/slog"
 
@@ -11,22 +12,28 @@ import (
 )
 
 func main() {
+
+	cnf, err := config.LoadConfig()
+	if err != nil {
+		slog.Error("failed to load config", "err", err)
+		return
+	}
+
 	ctx := context.Background()
 	cancelCtx, cancel := context.WithCancel(ctx)
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
 
-	relay := daemon.NewRelay(cancelCtx)
+	relay := daemon.NewRelay(cancelCtx, cnf)
 
-	server := api.NewServer(8080, "127.0.0.1", relay)
+	server := api.NewServer(cnf.ListenIP, cnf.ListenPort, relay)
 
 	if err := server.Run(); err != nil {
 		slog.Error("failed to start server", "err", err)
 		return
 	}
 
-	// TODO: remove hardcoded signaling
-	relay.StartSignaling("ws://127.0.0.1:38080/ws")
+	relay.StartSignaling(cnf.SignalingHost)
 
 	<-c
 	cancel()

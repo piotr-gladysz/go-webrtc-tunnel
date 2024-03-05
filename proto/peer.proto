@@ -6,6 +6,7 @@ import "google/protobuf/empty.proto";
 message SetPeerRequest {
   string id = 1;
   repeated uint32 ports = 2;
+  bool connect = 3;
 }
 
 message RemovePeerRequest {

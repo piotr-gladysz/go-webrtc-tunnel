@@ -59,6 +59,8 @@ func (m *SetPeerRequest) validate(all bool) error {
 
 	// no validation rules for Id
 
+	// no validation rules for Connect
+
 	if len(errors) > 0 {
 		return SetPeerRequestMultiError(errors)
 	}
