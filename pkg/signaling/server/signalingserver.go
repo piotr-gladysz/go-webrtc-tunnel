@@ -5,6 +5,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 	"github.com/piotr-gladysz/go-webrtc-tunnel/pkg/signaling/message"
+	"log/slog"
 	"net/http"
 )
 
@@ -35,6 +36,9 @@ func NewSignalingServer() *SignalingServer {
 }
 
 func (s *SignalingServer) Start(listenAddr string) error {
+
+	slog.Info("starting signaling server", "listen_addr", listenAddr)
+
 	router := s.createRouter()
 
 	server := &http.Server{

@@ -34,6 +34,8 @@ type SignalingClient struct {
 	reconnectTime time.Duration
 
 	authInfo *message.AuthInfo
+
+	logger *slog.Logger
 }
 
 func NewSignalingClient(parentCtx context.Context, host string) *SignalingClient {
@@ -45,10 +47,14 @@ func NewSignalingClient(parentCtx context.Context, host string) *SignalingClient
 		host:          host,
 		reconnectTime: 2 * time.Second, // TODO: config
 		status:        NewSignalingStatus(),
+		logger:        slog.Default().With(slog.String("signaling_host", host)),
 	}
 }
 
 func (s *SignalingClient) Start() {
+
+	s.logger.Info("starting signaling client")
+
 	s.ctx, s.cancel = context.WithCancel(s.parentCtx)
 	s.connCh = make(chan struct{})
 
@@ -58,6 +64,7 @@ func (s *SignalingClient) Start() {
 }
 
 func (s *SignalingClient) Stop() {
+	s.logger.Info("stopping signaling client")
 	s.cancel()
 }
 
@@ -95,7 +102,7 @@ func (s *SignalingClient) runConnection() {
 			s.mux.Unlock()
 
 		} else {
-			slog.Warn("connCh is nil")
+			s.logger.Warn("connCh is nil")
 		}
 	}()
 
@@ -122,6 +129,8 @@ func (s *SignalingClient) runConnection() {
 
 		s.status.SetLastConnectionAttempt(time.Now())
 
+		s.logger.Info("connecting to signaling server")
+
 		conn, err := s.connect()
 
 		// check if we should stop
@@ -134,6 +143,7 @@ func (s *SignalingClient) runConnection() {
 		// if we have an error, we should try to reconnect
 		if err != nil {
 			s.status.SetLastError(err)
+			s.logger.Warn("failed to connect to signaling server", "error", err.Error())
 			continue
 		} else {
 			s.status.SetLastError(nil)
@@ -143,6 +153,8 @@ func (s *SignalingClient) runConnection() {
 			s.mux.Lock()
 			s.conn = conn
 			s.mux.Unlock()
+
+			s.logger.Info("connected to signaling server")
 		}
 
 		// if we have a connection, we should process it
@@ -150,13 +162,15 @@ func (s *SignalingClient) runConnection() {
 
 		// if we received an error, we should try to reconnect
 		if err != nil {
-			slog.Error("failed to receive token", "error", err.Error())
+			s.logger.Error("failed to receive token", "error", err.Error())
 			continue
 		} else {
 			s.mux.Lock()
 			s.authInfo, _ = tokenMsg.GetAuthToken()
 			s.mux.Unlock()
 			close(s.connCh)
+
+			s.logger.Info("received token", "token", s.authInfo.Token)
 		}
 
 		// if we received a token, we are connected
@@ -177,6 +191,8 @@ func (s *SignalingClient) runConnection() {
 			return
 		default:
 		}
+
+		s.logger.Info("disconnected from signaling server, retrying")
 
 	}
 }

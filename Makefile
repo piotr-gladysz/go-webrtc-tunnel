@@ -11,7 +11,12 @@ build-signaling:
 	go build -o bin/signaling ./cmd/signaling/main.go
 
 test:
-	go test -v -count=1 ./pkg/...
+	@ if go test -v -count=1 ./pkg/...; then \
+   		echo "\n\nTests passed"; \
+   	else \
+   		echo "\n\n!!! Tests failed !!!"; \
+   		exit 1; \
+   	fi
 
 gen-grpc:
 	docker run \

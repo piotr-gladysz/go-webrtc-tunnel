@@ -8,6 +8,7 @@ require (
 	github.com/jedib0t/go-pretty/v6 v6.5.4
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/pion/webrtc/v4 v4.0.0-beta.11
+	github.com/pkg/errors v0.9.1
 	github.com/spf13/cobra v1.8.0
 	github.com/spf13/viper v1.18.2
 	google.golang.org/grpc v1.61.1

@@ -17,9 +17,11 @@ type MessageDecoder interface {
 }
 
 func (s *SignalingServer) handleWS(c *gin.Context) {
+
+	slog.Debug("New WS connection", "remote", c.Request.RemoteAddr)
 	session, err := s.authenticate(c)
 	if err != nil {
-		slog.Error("Failed to authenticate WS", "err", err)
+		slog.Warn("Failed to authenticate WS", "err", err)
 		c.AbortWithStatus(401)
 		return
 	}
@@ -33,6 +35,8 @@ func (s *SignalingServer) handleWS(c *gin.Context) {
 	}
 
 	session.conn = conn
+
+	slog.Debug("WS connection upgraded", "session", session.id, "remote", conn.RemoteAddr().String())
 
 	go s.handleWsConn(session)
 }

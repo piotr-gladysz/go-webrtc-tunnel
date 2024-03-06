@@ -3,12 +3,23 @@ package server
 import (
 	"context"
 	"errors"
+	"fmt"
+	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 	"github.com/piotr-gladysz/go-webrtc-tunnel/pkg/signaling/message"
+	"io"
+	"log/slog"
 	"net/http"
 	"testing"
 	"time"
 )
+
+func init() {
+	fmt.Printf("SignalingServer tests init, slog is disabled\n")
+	slog.SetDefault(slog.New(slog.NewTextHandler(io.Discard, nil)))
+
+	gin.SetMode(gin.TestMode)
+}
 
 func createSockets(url string, t *testing.T) (*websocket.Conn, *websocket.Conn) {
 	sender, _, err := websocket.DefaultDialer.Dial(url, nil)
@@ -68,7 +79,7 @@ func TestSignalingServer(t *testing.T) {
 
 	u := "ws://127.0.0.1:18080/ws"
 
-	time.Sleep(1 * time.Second)
+	time.Sleep(2 * time.Second)
 
 	sender, receiver := createSockets(u, t)
 

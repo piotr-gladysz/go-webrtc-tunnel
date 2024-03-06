@@ -7,6 +7,8 @@ import (
 
 func LoadConfig() (*Config, error) {
 	viper.SetConfigType("yaml")
+	viper.AddConfigPath(".")
+	viper.SetConfigName("relay-config")
 	viper.AutomaticEnv()
 	_ = viper.ReadInConfig()
 
@@ -21,20 +23,25 @@ func LoadConfig() (*Config, error) {
 }
 
 type Config struct {
-	ListenIP   string
-	ListenPort int
+	Debug bool `mapstructure:"debug"`
 
-	SignalingHost string
+	ListenIP   string `mapstructure:"listen_ip"`
+	ListenPort int    `mapstructure:"listen_port"`
 
-	StunServers []string
+	DisableTLS    bool   `mapstructure:"disable_tls"`
+	SignalingHost string `mapstructure:"signaling_host"`
+
+	StunServers []string `mapstructure:"stun_servers"`
 }
 
 func getDefaultConfig() *Config {
 
 	return &Config{
+		Debug:         false,
 		ListenIP:      "127.0.0.1",
-		ListenPort:    8080,
-		SignalingHost: "ws://127.0.0.1:38080/ws",
+		ListenPort:    13080,
+		DisableTLS:    false,
+		SignalingHost: "127.0.0.1:38080",
 		StunServers:   []string{"stun:stun.l.google.com:19302"},
 	}
 }

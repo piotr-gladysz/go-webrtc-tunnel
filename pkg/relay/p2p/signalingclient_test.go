@@ -3,11 +3,22 @@ package p2p
 import (
 	"context"
 	"errors"
+	"fmt"
+	"github.com/gin-gonic/gin"
 	"github.com/piotr-gladysz/go-webrtc-tunnel/pkg/signaling/server"
+	"io"
+	"log/slog"
 	"net/http"
 	"testing"
 	"time"
 )
+
+func init() {
+	fmt.Printf("SignalingClient tests init, slog is disabled\n")
+	slog.SetDefault(slog.New(slog.NewTextHandler(io.Discard, nil)))
+
+	gin.SetMode(gin.TestMode)
+}
 
 func TestSignalingClient_Start(t *testing.T) {
 	srvCh := make(chan struct{})
@@ -23,8 +34,11 @@ func TestSignalingClient_Start(t *testing.T) {
 			t.Log("Server closed")
 		}
 	}()
+
+	time.Sleep(1 * time.Second)
+
 	ctx := context.Background()
-	client := NewSignalingClient(ctx, "ws://localhost:18081/ws")
+	client := NewSignalingClient(ctx, "localhost:18081")
 
 	client.Start()
 

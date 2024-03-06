@@ -19,6 +19,13 @@ func main() {
 		return
 	}
 
+	if cnf.Debug {
+		slog.SetDefault(createLogger(slog.LevelDebug))
+		slog.Debug("Debug mode enabled")
+	} else {
+		slog.SetDefault(createLogger(slog.LevelInfo))
+	}
+
 	ctx := context.Background()
 	cancelCtx, cancel := context.WithCancel(ctx)
 	c := make(chan os.Signal, 1)
@@ -38,5 +45,13 @@ func main() {
 	<-c
 	cancel()
 	slog.Info("shutting down")
+}
 
+func createLogger(level slog.Level) *slog.Logger {
+	opts := &slog.HandlerOptions{
+		Level: level,
+	}
+
+	handler := slog.NewTextHandler(os.Stdout, opts)
+	return slog.New(handler)
 }

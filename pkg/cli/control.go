@@ -12,8 +12,8 @@ func controlConnectCmd() *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:   "connect",
-		Long:  "Connect to the control server",
-		Short: "Connect to the control server",
+		Long:  "Connect to the signaling server",
+		Short: "Connect to the signaling server",
 		Run: func(cmd *cobra.Command, args []string) {
 			conn, err := getHostConn()
 			if err != nil {
@@ -29,9 +29,9 @@ func controlConnectCmd() *cobra.Command {
 			_, err = client.Connect(cmd.Context(), req)
 
 			if err != nil {
-				fmt.Println("Failed to connect to control server: ", err)
+				fmt.Println("Failed to connect to signaling server: ", err.Error())
 			} else {
-				fmt.Println("Connected to control server")
+				fmt.Println("Connected to signaling server")
 			}
 
 			defer conn.Close()
@@ -47,8 +47,8 @@ func controlConnectCmd() *cobra.Command {
 func controlDisconnectCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "disconnect",
-		Long:  "Disconnect from the control server",
-		Short: "Disconnect from the control server",
+		Long:  "Disconnect from the signaling server",
+		Short: "Disconnect from the signaling server",
 		Run: func(cmd *cobra.Command, args []string) {
 			conn, err := getHostConn()
 			if err != nil {
@@ -60,9 +60,9 @@ func controlDisconnectCmd() *cobra.Command {
 			_, err = client.Disconnect(cmd.Context(), &emptypb.Empty{})
 
 			if err != nil {
-				fmt.Println("Failed to disconnect from control server: ", err)
+				fmt.Println("Failed to disconnect from signaling server: ", err.Error())
 			} else {
-				fmt.Println("Disconnected from control server")
+				fmt.Println("Disconnected from signaling server")
 			}
 
 			defer conn.Close()
@@ -73,8 +73,8 @@ func controlDisconnectCmd() *cobra.Command {
 func controlGetStatusCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "status",
-		Long:  "Get status of the control server",
-		Short: "Get status of the control server",
+		Long:  "Get relay status",
+		Short: "Get relay status",
 		Run: func(cmd *cobra.Command, args []string) {
 			conn, err := getHostConn()
 			if err != nil {
@@ -86,9 +86,9 @@ func controlGetStatusCmd() *cobra.Command {
 			_, err = client.GetStatus(cmd.Context(), &emptypb.Empty{})
 
 			if err != nil {
-				fmt.Println("Failed to get status of control server: ", err)
+				fmt.Println("Failed to get status of relay: ", err.Error())
 			} else {
-				fmt.Println("Control server is running")
+				fmt.Println("Got status of relay") //TODO: print status
 			}
 
 			defer conn.Close()

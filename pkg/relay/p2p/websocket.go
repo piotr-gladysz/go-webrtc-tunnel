@@ -3,13 +3,15 @@ package p2p
 import (
 	"context"
 	"errors"
+	"fmt"
 	"github.com/gorilla/websocket"
 	"github.com/piotr-gladysz/go-webrtc-tunnel/pkg/signaling/message"
 	"log/slog"
 )
 
 func (s *SignalingClient) connect() (*websocket.Conn, error) {
-	conn, _, err := websocket.DefaultDialer.Dial(s.host, nil)
+	url := fmt.Sprintf("ws://%s/ws", s.host)
+	conn, _, err := websocket.DefaultDialer.Dial(url, nil)
 	if err != nil {
 		return nil, err
 	}
