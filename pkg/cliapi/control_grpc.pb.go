@@ -31,7 +31,7 @@ const (
 type ControlClient interface {
 	Connect(ctx context.Context, in *ConnectRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	Disconnect(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	GetStatus(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetStatusResponse, error)
+	GetStatus(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*RelayStatusResponse, error)
 }
 
 type controlClient struct {
@@ -60,8 +60,8 @@ func (c *controlClient) Disconnect(ctx context.Context, in *emptypb.Empty, opts 
 	return out, nil
 }
 
-func (c *controlClient) GetStatus(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetStatusResponse, error) {
-	out := new(GetStatusResponse)
+func (c *controlClient) GetStatus(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*RelayStatusResponse, error) {
+	out := new(RelayStatusResponse)
 	err := c.cc.Invoke(ctx, Control_GetStatus_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -75,7 +75,7 @@ func (c *controlClient) GetStatus(ctx context.Context, in *emptypb.Empty, opts .
 type ControlServer interface {
 	Connect(context.Context, *ConnectRequest) (*emptypb.Empty, error)
 	Disconnect(context.Context, *emptypb.Empty) (*emptypb.Empty, error)
-	GetStatus(context.Context, *emptypb.Empty) (*GetStatusResponse, error)
+	GetStatus(context.Context, *emptypb.Empty) (*RelayStatusResponse, error)
 	mustEmbedUnimplementedControlServer()
 }
 
@@ -89,7 +89,7 @@ func (UnimplementedControlServer) Connect(context.Context, *ConnectRequest) (*em
 func (UnimplementedControlServer) Disconnect(context.Context, *emptypb.Empty) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Disconnect not implemented")
 }
-func (UnimplementedControlServer) GetStatus(context.Context, *emptypb.Empty) (*GetStatusResponse, error) {
+func (UnimplementedControlServer) GetStatus(context.Context, *emptypb.Empty) (*RelayStatusResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetStatus not implemented")
 }
 func (UnimplementedControlServer) mustEmbedUnimplementedControlServer() {}

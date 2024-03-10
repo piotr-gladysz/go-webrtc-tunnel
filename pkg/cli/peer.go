@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/piotr-gladysz/go-webrtc-tunnel/pkg/cliapi"
 	"github.com/spf13/cobra"
+	"google.golang.org/protobuf/types/known/emptypb"
 	"strconv"
 	"strings"
 )
@@ -38,12 +39,12 @@ func setPeerCmd() *cobra.Command {
 				Connect: connect,
 			}
 
-			_, err = client.SetPeer(cmd.Context(), &req)
+			ret, err := client.SetPeer(cmd.Context(), &req)
 
 			if err != nil {
 				fmt.Println("Failed to set peer: ", err)
 			} else {
-				fmt.Println("Peer set")
+				drawPeer(cmd.OutOrStdout(), ret)
 			}
 		},
 	}
@@ -91,6 +92,30 @@ func removePeerCmd() *cobra.Command {
 	cmd.MarkFlagRequired("id")
 
 	return cmd
+}
+
+func listPeersCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "get",
+		Short: "Get peers",
+		Long:  "Get peers",
+		Run: func(cmd *cobra.Command, args []string) {
+			conn, err := getHostConn()
+			if err != nil {
+				return
+			}
+
+			client := cliapi.NewPeerClient(conn)
+
+			ret, err := client.GetPeers(cmd.Context(), &emptypb.Empty{})
+
+			if err != nil {
+				fmt.Println("Failed to get peers: ", err)
+			} else {
+				drawPeers(cmd.OutOrStdout(), ret.Peers)
+			}
+		},
+	}
 }
 
 func parsePorts(ports string) ([]uint32, error) {

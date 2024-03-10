@@ -137,48 +137,50 @@ var _ interface {
 	ErrorName() string
 } = ConnectRequestValidationError{}
 
-// Validate checks the field values on GetStatusResponse with the rules defined
-// in the proto definition for this message. If any rules are violated, the
-// first error encountered is returned, or nil if there are no violations.
-func (m *GetStatusResponse) Validate() error {
+// Validate checks the field values on RelayStatusResponse with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *RelayStatusResponse) Validate() error {
 	return m.validate(false)
 }
 
-// ValidateAll checks the field values on GetStatusResponse with the rules
+// ValidateAll checks the field values on RelayStatusResponse with the rules
 // defined in the proto definition for this message. If any rules are
 // violated, the result is a list of violation errors wrapped in
-// GetStatusResponseMultiError, or nil if none found.
-func (m *GetStatusResponse) ValidateAll() error {
+// RelayStatusResponseMultiError, or nil if none found.
+func (m *RelayStatusResponse) ValidateAll() error {
 	return m.validate(true)
 }
 
-func (m *GetStatusResponse) validate(all bool) error {
+func (m *RelayStatusResponse) validate(all bool) error {
 	if m == nil {
 		return nil
 	}
 
 	var errors []error
 
-	// no validation rules for Status
+	// no validation rules for Connected
 
 	// no validation rules for RetryCount
 
 	// no validation rules for Uptime
 
+	// no validation rules for SignalingServer
+
 	if len(errors) > 0 {
-		return GetStatusResponseMultiError(errors)
+		return RelayStatusResponseMultiError(errors)
 	}
 
 	return nil
 }
 
-// GetStatusResponseMultiError is an error wrapping multiple validation errors
-// returned by GetStatusResponse.ValidateAll() if the designated constraints
-// aren't met.
-type GetStatusResponseMultiError []error
+// RelayStatusResponseMultiError is an error wrapping multiple validation
+// errors returned by RelayStatusResponse.ValidateAll() if the designated
+// constraints aren't met.
+type RelayStatusResponseMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
-func (m GetStatusResponseMultiError) Error() string {
+func (m RelayStatusResponseMultiError) Error() string {
 	var msgs []string
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
@@ -187,11 +189,11 @@ func (m GetStatusResponseMultiError) Error() string {
 }
 
 // AllErrors returns a list of validation violation errors.
-func (m GetStatusResponseMultiError) AllErrors() []error { return m }
+func (m RelayStatusResponseMultiError) AllErrors() []error { return m }
 
-// GetStatusResponseValidationError is the validation error returned by
-// GetStatusResponse.Validate if the designated constraints aren't met.
-type GetStatusResponseValidationError struct {
+// RelayStatusResponseValidationError is the validation error returned by
+// RelayStatusResponse.Validate if the designated constraints aren't met.
+type RelayStatusResponseValidationError struct {
 	field  string
 	reason string
 	cause  error
@@ -199,24 +201,24 @@ type GetStatusResponseValidationError struct {
 }
 
 // Field function returns field value.
-func (e GetStatusResponseValidationError) Field() string { return e.field }
+func (e RelayStatusResponseValidationError) Field() string { return e.field }
 
 // Reason function returns reason value.
-func (e GetStatusResponseValidationError) Reason() string { return e.reason }
+func (e RelayStatusResponseValidationError) Reason() string { return e.reason }
 
 // Cause function returns cause value.
-func (e GetStatusResponseValidationError) Cause() error { return e.cause }
+func (e RelayStatusResponseValidationError) Cause() error { return e.cause }
 
 // Key function returns key value.
-func (e GetStatusResponseValidationError) Key() bool { return e.key }
+func (e RelayStatusResponseValidationError) Key() bool { return e.key }
 
 // ErrorName returns error name.
-func (e GetStatusResponseValidationError) ErrorName() string {
-	return "GetStatusResponseValidationError"
+func (e RelayStatusResponseValidationError) ErrorName() string {
+	return "RelayStatusResponseValidationError"
 }
 
 // Error satisfies the builtin error interface
-func (e GetStatusResponseValidationError) Error() string {
+func (e RelayStatusResponseValidationError) Error() string {
 	cause := ""
 	if e.cause != nil {
 		cause = fmt.Sprintf(" | caused by: %v", e.cause)
@@ -228,14 +230,14 @@ func (e GetStatusResponseValidationError) Error() string {
 	}
 
 	return fmt.Sprintf(
-		"invalid %sGetStatusResponse.%s: %s%s",
+		"invalid %sRelayStatusResponse.%s: %s%s",
 		key,
 		e.field,
 		e.reason,
 		cause)
 }
 
-var _ error = GetStatusResponseValidationError{}
+var _ error = RelayStatusResponseValidationError{}
 
 var _ interface {
 	Field() string
@@ -243,4 +245,4 @@ var _ interface {
 	Key() bool
 	Cause() error
 	ErrorName() string
-} = GetStatusResponseValidationError{}
+} = RelayStatusResponseValidationError{}

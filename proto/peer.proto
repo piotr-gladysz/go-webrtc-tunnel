@@ -16,7 +16,9 @@ message RemovePeerRequest {
 message PeerResponse {
   string id = 1;
   repeated string ports = 2;
-  repeated string connected_ports = 3;
+  repeated string local_ports = 3;
+  repeated string remote_ports = 4;
+  bool connected = 5;
 }
 
 message PeerList {

@@ -51,6 +51,14 @@ func NewSignalingClient(parentCtx context.Context, host string) *SignalingClient
 	}
 }
 
+func (s *SignalingClient) GetStatus() *SignalingStatus {
+	return s.status
+}
+
+func (s *SignalingClient) GetHost() string {
+	return s.host
+}
+
 func (s *SignalingClient) Start() {
 
 	s.logger.Info("starting signaling client")
@@ -109,7 +117,7 @@ func (s *SignalingClient) runConnection() {
 	for {
 		s.status.IncRetryCount()
 		// prevent reconnecting too fast
-		sleepTime := 1*time.Second - time.Since(s.status.GetLastConnectionAttempt())
+		sleepTime := 2*time.Second - time.Since(s.status.GetLastConnectionAttempt())
 		if sleepTime > 0 {
 			ticker := time.NewTicker(sleepTime)
 			select {
@@ -117,6 +125,7 @@ func (s *SignalingClient) runConnection() {
 				ticker.Stop()
 				return
 			case <-ticker.C:
+				ticker.Stop()
 			}
 		}
 

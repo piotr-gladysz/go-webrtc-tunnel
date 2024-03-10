@@ -9,7 +9,7 @@ type SignalingStatus struct {
 	mux sync.RWMutex
 
 	connectTime           time.Time
-	retryCount            int
+	retryCount            uint32
 	isConnected           bool
 	lastError             error
 	lastConnectionAttempt time.Time
@@ -49,7 +49,7 @@ func (s *SignalingStatus) GetConnectTime() time.Time {
 	return s.connectTime
 }
 
-func (s *SignalingStatus) GetRetryCount() int {
+func (s *SignalingStatus) GetRetryCount() uint32 {
 	s.mux.RLock()
 	defer s.mux.RUnlock()
 	return s.retryCount

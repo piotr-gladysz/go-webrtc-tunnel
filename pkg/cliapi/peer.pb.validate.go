@@ -267,6 +267,8 @@ func (m *PeerResponse) validate(all bool) error {
 
 	// no validation rules for Id
 
+	// no validation rules for Connected
+
 	if len(errors) > 0 {
 		return PeerResponseMultiError(errors)
 	}

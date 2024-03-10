@@ -5,8 +5,6 @@ import (
 	"github.com/piotr-gladysz/go-webrtc-tunnel/pkg/cliapi"
 	"github.com/piotr-gladysz/go-webrtc-tunnel/pkg/relay/daemon"
 	"github.com/pkg/errors"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"time"
 )
@@ -45,15 +43,51 @@ func (c *ControlServer) Connect(ctx context.Context, req *cliapi.ConnectRequest)
 
 	return nil, err
 }
-func (c *ControlServer) Disconnect(ctx context.Context, req *emptypb.Empty) (*emptypb.Empty, error) {
+func (c *ControlServer) Disconnect(_ context.Context, _ *emptypb.Empty) (*emptypb.Empty, error) {
 	return nil, c.relay.StopSignaling()
 }
-func (c *ControlServer) GetStatus(ctx context.Context, req *emptypb.Empty) (*cliapi.GetStatusResponse, error) {
-	//ret := cliapi.GetStatusResponse{
-	//	Status:     "",
-	//	RetryCount: "",
-	//	Uptime:     "",
-	//}
 
-	return nil, status.Errorf(codes.Unimplemented, "method GetStatus not implemented")
+func (c *ControlServer) GetStatus(_ context.Context, _ *emptypb.Empty) (*cliapi.RelayStatusResponse, error) {
+	ret := &cliapi.RelayStatusResponse{
+		Connected:       c.isConnected(),
+		RetryCount:      c.retryCount(),
+		Uptime:          c.uptime(),
+		SignalingServer: c.signalingServer(),
+	}
+
+	return ret, nil
+}
+
+func (c *ControlServer) isConnected() bool {
+	if c.relay.GetSignaling() == nil {
+		return false
+	}
+
+	return c.relay.GetSignaling().IsConnected()
+}
+
+func (c *ControlServer) retryCount() uint32 {
+	if c.relay.GetSignaling() == nil {
+		return 0
+	}
+
+	return c.relay.GetSignaling().GetStatus().GetRetryCount()
+}
+
+func (c *ControlServer) uptime() uint32 {
+	if c.relay.GetSignaling() == nil || !c.relay.GetSignaling().IsConnected() {
+		return 0
+	}
+
+	connectTime := c.relay.GetSignaling().GetStatus().GetConnectTime()
+
+	return uint32(time.Since(connectTime).Seconds())
+}
+
+func (c *ControlServer) signalingServer() string {
+	if c.relay.GetSignaling() == nil {
+		return ""
+	}
+
+	return c.relay.GetSignaling().GetHost()
 }

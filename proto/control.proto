@@ -7,13 +7,14 @@ message ConnectRequest {
   string address = 1;
 }
 
-message GetStatusResponse {
-  string status = 1;
-  string retry_count = 2;
-  string uptime = 3;
+message RelayStatusResponse {
+  bool connected = 1;
+  uint32 retry_count = 2;
+  uint32 uptime = 3;
+  string signaling_server = 4;
 }
 service Control {
   rpc Connect(ConnectRequest) returns (google.protobuf.Empty) {}
   rpc Disconnect(google.protobuf.Empty) returns (google.protobuf.Empty) {}
-  rpc GetStatus(google.protobuf.Empty) returns (GetStatusResponse) {}
+  rpc GetStatus(google.protobuf.Empty) returns (RelayStatusResponse) {}
 }

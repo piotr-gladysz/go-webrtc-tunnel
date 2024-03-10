@@ -183,7 +183,7 @@
                 </li>
               
                 <li>
-                  <a href="#cliapi.GetStatusResponse"><span class="badge">M</span>GetStatusResponse</a>
+                  <a href="#cliapi.RelayStatusResponse"><span class="badge">M</span>RelayStatusResponse</a>
                 </li>
               
               
@@ -294,7 +294,7 @@
 
         
       
-        <h3 id="cliapi.GetStatusResponse">GetStatusResponse</h3>
+        <h3 id="cliapi.RelayStatusResponse">RelayStatusResponse</h3>
         <p></p>
 
         
@@ -305,21 +305,28 @@
             <tbody>
               
                 <tr>
-                  <td>status</td>
-                  <td><a href="#string">string</a></td>
+                  <td>connected</td>
+                  <td><a href="#bool">bool</a></td>
                   <td></td>
                   <td><p> </p></td>
                 </tr>
               
                 <tr>
                   <td>retry_count</td>
-                  <td><a href="#string">string</a></td>
+                  <td><a href="#uint32">uint32</a></td>
                   <td></td>
                   <td><p> </p></td>
                 </tr>
               
                 <tr>
                   <td>uptime</td>
+                  <td><a href="#uint32">uint32</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>signaling_server</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p> </p></td>
@@ -363,7 +370,7 @@
               <tr>
                 <td>GetStatus</td>
                 <td><a href="#google.protobuf.Empty">.google.protobuf.Empty</a></td>
-                <td><a href="#cliapi.GetStatusResponse">GetStatusResponse</a></td>
+                <td><a href="#cliapi.RelayStatusResponse">RelayStatusResponse</a></td>
                 <td><p></p></td>
               </tr>
             
@@ -428,9 +435,23 @@
                 </tr>
               
                 <tr>
-                  <td>connected_ports</td>
+                  <td>local_ports</td>
                   <td><a href="#string">string</a></td>
                   <td>repeated</td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>remote_ports</td>
+                  <td><a href="#string">string</a></td>
+                  <td>repeated</td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>connected</td>
+                  <td><a href="#bool">bool</a></td>
+                  <td></td>
                   <td><p> </p></td>
                 </tr>
               

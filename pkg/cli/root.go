@@ -20,6 +20,7 @@ func CreateCLICommand() *cobra.Command {
 
 	control.AddCommand(controlConnectCmd())
 	control.AddCommand(controlDisconnectCmd())
+	control.AddCommand(controlGetStatusCmd())
 
 	peer := &cobra.Command{
 		Use:   "peer",
@@ -29,6 +30,7 @@ func CreateCLICommand() *cobra.Command {
 
 	peer.AddCommand(setPeerCmd())
 	peer.AddCommand(removePeerCmd())
+	peer.AddCommand(listPeersCmd())
 
 	tunnel := &cobra.Command{
 		Use:   "tunnel",

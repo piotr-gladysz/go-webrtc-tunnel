@@ -83,12 +83,12 @@ func controlGetStatusCmd() *cobra.Command {
 
 			client := cliapi.NewControlClient(conn)
 
-			_, err = client.GetStatus(cmd.Context(), &emptypb.Empty{})
+			status, err := client.GetStatus(cmd.Context(), &emptypb.Empty{})
 
 			if err != nil {
 				fmt.Println("Failed to get status of relay: ", err.Error())
 			} else {
-				fmt.Println("Got status of relay") //TODO: print status
+				drawStatus(cmd.OutOrStdout(), status)
 			}
 
 			defer conn.Close()
