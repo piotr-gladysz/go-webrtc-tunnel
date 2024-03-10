@@ -49,7 +49,7 @@ func (s *StateListenerMock) OnDataChannel(p *Peer, channel *webrtc.DataChannel) 
 	s.onDataChannel(p, channel)
 }
 
-func TestStart(t *testing.T) {
+func TestWebRTC(t *testing.T) {
 
 	ctx := context.Background()
 	offererConnectedCh := make(chan bool, 1)
@@ -57,6 +57,11 @@ func TestStart(t *testing.T) {
 
 	offererCloseCh := make(chan struct{}, 1)
 	answererCloseCh := make(chan struct{}, 1)
+
+	offererDescriptionCh := make(chan string)
+
+	offererControlCh := make(chan struct{})
+	answererControlCh := make(chan struct{})
 
 	offererListener := WebrtcListenerMock{}
 	answererListener := WebrtcListenerMock{}
@@ -85,12 +90,14 @@ func TestStart(t *testing.T) {
 	answererListener.onLocalDescription = func(p *Peer, sdp webrtc.SessionDescription) {
 		slog.Info("answererListener.onLocalDescription", "sdp", sdp.SDP)
 		err := offerer.SetRemoteDescription(sdp.SDP)
+		close(offererDescriptionCh)
 		if err != nil {
 			t.Errorf("offerer.SetRemoteDescription() failed: %v", err)
 		}
 	}
 
 	answererListener.onIceCandidate = func(p *Peer, candidate *webrtc.ICECandidate) {
+		<-offererDescriptionCh
 		slog.Info("answererListener.onIceCandidate", "candidate", candidate.ToJSON().Candidate)
 		err := offerer.AddICECandidate(candidate.ToJSON().Candidate)
 		if err != nil {
@@ -109,6 +116,12 @@ func TestStart(t *testing.T) {
 		}
 	}
 
+	offererStateListener.onDataChannel = func(p *Peer, channel *webrtc.DataChannel) {
+		if channel.Label() == mainDataChannelLabel {
+			offererControlCh <- struct{}{}
+		}
+	}
+
 	answererStateListener.onICEConnectionStateChange = func(p *Peer, state webrtc.ICEConnectionState) {
 		switch state {
 		case webrtc.ICEConnectionStateConnected:
@@ -117,6 +130,12 @@ func TestStart(t *testing.T) {
 			answererConnectedCh <- false
 		case webrtc.ICEConnectionStateClosed:
 			answererCloseCh <- struct{}{}
+		}
+	}
+
+	answererStateListener.onDataChannel = func(p *Peer, channel *webrtc.DataChannel) {
+		if channel.Label() == mainDataChannelLabel {
+			answererControlCh <- struct{}{}
 		}
 	}
 
@@ -143,6 +162,30 @@ func TestStart(t *testing.T) {
 
 	if <-answererConnectedCh == false {
 		t.Error("answerer failed to connect")
+	}
+
+	offererControl := false
+	answererControl := false
+	controlTimeout := time.After(5 * time.Second)
+
+controlLoop:
+	for {
+		select {
+		case <-offererControlCh:
+			offererControl = true
+			if offererControl && answererControl {
+				break controlLoop
+			}
+		case <-answererControlCh:
+			answererControl = true
+			if offererControl && answererControl {
+				break controlLoop
+			}
+		case <-controlTimeout:
+			t.Errorf("timed out waiting for offerer control channel, offererControl: %t, answererControl: %t", offererControl, answererControl)
+			break controlLoop
+		}
+
 	}
 
 	if err = offerer.Close(); err != nil {

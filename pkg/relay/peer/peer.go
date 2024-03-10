@@ -7,6 +7,8 @@ import (
 	"sync"
 )
 
+const mainDataChannelLabel = "control"
+
 var AlreadyStartedError = errors.New("tunnel already started")
 
 type WebRTCListener interface {
@@ -85,7 +87,7 @@ func (p *Peer) Start(descrStr string) (err error) {
 	peerConnection.OnICECandidate(p.onICECandidate)
 	peerConnection.OnICEConnectionStateChange(p.onICEConnectionStateChange)
 	peerConnection.OnDataChannel(p.onDataChannel)
-	if p.controlChannel, err = peerConnection.CreateDataChannel("control", nil); err != nil {
+	if p.controlChannel, err = peerConnection.CreateDataChannel(mainDataChannelLabel, nil); err != nil {
 		return err
 	}
 

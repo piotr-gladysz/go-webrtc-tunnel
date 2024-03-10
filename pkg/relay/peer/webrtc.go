@@ -60,7 +60,7 @@ func (p *Peer) onICEConnectionStateChange(state webrtc.ICEConnectionState) {
 }
 
 func (p *Peer) onDataChannel(channel *webrtc.DataChannel) {
-
+	slog.Debug("On data channel", "peerId", p.Id, "label", channel.Label())
 	if p.stateListener != nil {
 		p.stateListener.OnDataChannel(p, channel)
 	}
