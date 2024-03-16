@@ -1,0 +1,34 @@
+syntax = "proto3";
+package cliapi;
+
+import "google/protobuf/empty.proto";
+
+message CreateTunnelRequest {
+  string peer_id = 1;
+  uint32 local_port = 2;
+  string remote_host = 3;
+  uint32 remote_port = 4;
+}
+
+
+message TunnelResponse {
+  string id = 1;
+  string peer_id = 2;
+  uint32 local_port = 3;
+  uint32 remote_port = 4;
+}
+
+message ListResponse {
+  repeated TunnelResponse tunnels = 1;
+}
+
+message DeleteRequest {
+  string id = 1;
+}
+
+
+service Tunnel {
+  rpc Create(CreateTunnelRequest) returns (TunnelResponse);
+  rpc List(google.protobuf.Empty) returns (ListResponse);
+  rpc Delete(DeleteRequest) returns (google.protobuf.Empty);
+}

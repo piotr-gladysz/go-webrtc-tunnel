@@ -1,0 +1,33 @@
+syntax = "proto3";
+package cliapi;
+
+import "google/protobuf/empty.proto";
+
+message SetPeerRequest {
+  string id = 1;
+  repeated uint32 ports = 2;
+  bool connect = 3;
+}
+
+message RemovePeerRequest {
+  string id = 1;
+}
+
+message PeerResponse {
+  string id = 1;
+  repeated string ports = 2;
+  repeated string local_ports = 3;
+  repeated string remote_ports = 4;
+  bool connected = 5;
+}
+
+message PeerList {
+  repeated PeerResponse peers = 1;
+}
+
+
+service Peer {
+  rpc GetPeers(google.protobuf.Empty) returns (PeerList);
+  rpc SetPeer(SetPeerRequest) returns (PeerResponse);
+  rpc RemovePeer(RemovePeerRequest) returns (google.protobuf.Empty);
+}
