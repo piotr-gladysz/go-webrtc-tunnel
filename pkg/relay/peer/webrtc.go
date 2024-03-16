@@ -2,7 +2,9 @@ package peer
 
 import (
 	"github.com/pion/webrtc/v4"
+	"github.com/piotr-gladysz/go-webrtc-tunnel/pkg/relay/proxymsg"
 	"log/slog"
+	"slices"
 )
 
 func (p *Peer) AddICECandidate(candidateStr string) error {
@@ -19,7 +21,7 @@ func (p *Peer) SetRemoteDescription(descrStr string) error {
 	if err := p.peerConnection.SetRemoteDescription(descr); err != nil {
 		return err
 	}
-	if len(p.iceCandidates) > 0 && p.webrtclistener != nil {
+	if len(p.iceCandidates) > 0 && p.webrtcListener != nil {
 		p.candidateMux.Lock()
 		defer p.candidateMux.Unlock()
 
@@ -32,6 +34,45 @@ func (p *Peer) SetRemoteDescription(descrStr string) error {
 		p.iceCandidates = make([]string, 0)
 	}
 	return nil
+}
+
+func (p *Peer) RecvMessage(msg webrtc.DataChannelMessage) {
+	p.proxyRecvMux.Lock()
+	defer p.proxyRecvMux.Unlock()
+
+	decoded, err := p.proxyDecoder.Decode(msg.Data)
+	if err != nil {
+		slog.Warn("Failed to decode message", "err", err)
+
+		// TODO: callback message
+		return
+	}
+
+	if !slices.Contains(p.AllowedLocalPorts, int(decoded.Port)) {
+		slog.Warn("Port not allowed", "port", decoded.Port)
+
+		// TODO: callback message
+		return
+	}
+
+	if err = p.proxyMessageReceiver.RecvMessage(decoded); err != nil {
+		slog.Warn("Failed to read message", "err", err)
+	}
+}
+
+func (p *Peer) SendMessage(msg proxymsg.ProxyMessage) error {
+	p.proxySendMux.Lock()
+	defer p.proxySendMux.Unlock()
+
+	buf := make([]byte, msg.GetTotalLen())
+
+	err := p.proxyEncoder.Encode(&msg, buf)
+	if err != nil {
+		slog.Warn("Failed to encode message", "err", err)
+		return err
+	}
+
+	return p.controlChannel.Send(buf)
 }
 
 func (p *Peer) onICEConnectionStateChange(state webrtc.ICEConnectionState) {
@@ -64,6 +105,8 @@ func (p *Peer) onDataChannel(channel *webrtc.DataChannel) {
 	if p.stateListener != nil {
 		p.stateListener.OnDataChannel(p, channel)
 	}
+
+	channel.OnMessage(p.RecvMessage)
 }
 
 func (p *Peer) onICECandidate(candidate *webrtc.ICECandidate) {
@@ -78,9 +121,9 @@ func (p *Peer) onICECandidate(candidate *webrtc.ICECandidate) {
 	p.candidateMux.Lock()
 	defer p.candidateMux.Unlock()
 
-	if p.peerConnection.RemoteDescription() == nil || p.webrtclistener == nil {
+	if p.peerConnection.RemoteDescription() == nil || p.webrtcListener == nil {
 		p.iceCandidates = append(p.iceCandidates, candidateStr)
 	} else {
-		p.webrtclistener.OnICECandidate(p, candidate)
+		p.webrtcListener.OnICECandidate(p, candidate)
 	}
 }

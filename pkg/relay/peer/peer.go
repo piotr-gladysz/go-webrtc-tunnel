@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"github.com/pion/webrtc/v4"
+	"github.com/piotr-gladysz/go-webrtc-tunnel/pkg/relay/proxymsg"
 	"sync"
 )
 
@@ -20,6 +21,10 @@ type WebRTCListener interface {
 type StateListener interface {
 	OnICEConnectionStateChange(p *Peer, state webrtc.ICEConnectionState)
 	OnDataChannel(p *Peer, channel *webrtc.DataChannel)
+}
+
+type ProxyMessageReceiver interface {
+	RecvMessage(msg proxymsg.ProxyMessage) error
 }
 
 type Peer struct {
@@ -45,10 +50,17 @@ type Peer struct {
 	iceCandidates []string
 	candidateMux  sync.Mutex
 
-	webrtclistener WebRTCListener
+	webrtcListener WebRTCListener
 	stateListener  StateListener
 
 	controlChannel *webrtc.DataChannel
+
+	proxyRecvMux sync.Mutex
+	proxySendMux sync.Mutex
+
+	proxyMessageReceiver ProxyMessageReceiver
+	proxyEncoder         proxymsg.ProxyEncoder
+	proxyDecoder         proxymsg.ProxyDecoder
 }
 
 func NewTunnel(parentCtx context.Context, id string, stunServers []string, listener WebRTCListener) *Peer {
@@ -56,7 +68,7 @@ func NewTunnel(parentCtx context.Context, id string, stunServers []string, liste
 		Id:             id,
 		parentCtx:      parentCtx,
 		stunServers:    stunServers,
-		webrtclistener: listener,
+		webrtcListener: listener,
 	}
 }
 
@@ -116,7 +128,7 @@ func (p *Peer) Start(descrStr string) (err error) {
 		return err
 	}
 
-	p.webrtclistener.OnLocalDescription(p, localDescription)
+	p.webrtcListener.OnLocalDescription(p, localDescription)
 
 	return nil
 }

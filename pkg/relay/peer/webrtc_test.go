@@ -1,8 +1,10 @@
 package peer
 
 import (
+	"bytes"
 	"context"
 	"github.com/pion/webrtc/v4"
+	"github.com/piotr-gladysz/go-webrtc-tunnel/pkg/relay/proxymsg"
 	"log/slog"
 	"os"
 	"testing"
@@ -29,6 +31,10 @@ type StateListenerMock struct {
 	onDataChannel              func(p *Peer, channel *webrtc.DataChannel)
 }
 
+type PeerReceiverMock struct {
+	recvCh chan proxymsg.ProxyMessage
+}
+
 func (p *WebrtcListenerMock) OnICECandidate(t *Peer, candidate *webrtc.ICECandidate) {
 	p.onIceCandidate(t, candidate)
 }
@@ -47,6 +53,11 @@ func (s *StateListenerMock) OnICEConnectionStateChange(p *Peer, state webrtc.ICE
 
 func (s *StateListenerMock) OnDataChannel(p *Peer, channel *webrtc.DataChannel) {
 	s.onDataChannel(p, channel)
+}
+
+func (p PeerReceiverMock) RecvMessage(msg proxymsg.ProxyMessage) error {
+	p.recvCh <- msg
+	return nil
 }
 
 func TestWebRTC(t *testing.T) {
@@ -186,6 +197,28 @@ controlLoop:
 			break controlLoop
 		}
 
+	}
+
+	msg := proxymsg.NewProxyMessage(1000, 2000, 3, []byte("test"))
+	msgReceiver := PeerReceiverMock{
+		recvCh: make(chan proxymsg.ProxyMessage),
+	}
+
+	answerer.proxyMessageReceiver = &msgReceiver
+	answerer.AllowedLocalPorts = []int{1000}
+
+	err = offerer.SendMessage(msg)
+	if err != nil {
+		t.Errorf("offerer.SendMessage() failed: %v", err)
+	}
+
+	select {
+	case recvMsg := <-msgReceiver.recvCh:
+		if !bytes.Equal(recvMsg.Data, msg.Data) {
+			t.Errorf("Received message data does not match sent message data")
+		}
+	case <-time.After(5 * time.Second):
+		t.Errorf("timed out waiting for message to be received")
 	}
 
 	if err = offerer.Close(); err != nil {
